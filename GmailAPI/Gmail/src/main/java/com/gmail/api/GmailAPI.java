@@ -3,7 +3,6 @@ package com.gmail.api;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -11,16 +10,12 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.security.GeneralSecurityException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import javax.mail.Folder;
-
-import com.google.api.services.gmail.model.MessagePart;
 import com.google.api.services.gmail.model.MessagePartHeader;
 import com.google.api.services.gmail.model.ModifyMessageRequest;
 
@@ -68,17 +63,17 @@ https://accounts.google.com/o/oauth2/token
 	private static final JsonFactory JSON_FACTORY = JacksonFactory.getDefaultInstance();
 	private static final String user = "me";
 	static Gmail service = null;
-	private static File filePath = new File(System.getProperty("user.dir") + "/credentials.json");
+	private static File filePath = new File(System.getProperty("user.dir") + "/GmailAPI/Gmail/credentials.json");
 
 	public static void main(String[] args) throws IOException, GeneralSecurityException {
 
 		getGmailService();
-		getListMails();
+		getListUnreadMails(service, "me", "is:unread");
+
 	}
 
-	public static void getListMails() throws IOException {
+	public static void getListAllMails() throws IOException {   //stampa la lista di tutte le mail
 		Gmail.Users.Messages.List request = service.users().messages().list(user);
-//		Message m1 = service.users().messages().get(user, message.getId()).setFields("payload/headers").execute();
 		ListMessagesResponse messagesResponse = request.execute();
 		request.setPageToken(messagesResponse.getNextPageToken());
 		List<Message> messages = messagesResponse.getMessages();
@@ -89,14 +84,7 @@ https://accounts.google.com/o/oauth2/token
 			   Message message = service.users().messages().get(user, id).execute();
 			  
 			   String emailBody = StringUtils.newStringUtf8(Base64.decodeBase64(message.getPayload().getParts().get(0).getBody().getData()));
-			//   StringUtils.newStringUtf8(message.getPayload().getHeaders().get(0).getValue().getBytes());
-			   List<String> nonLette = message.getLabelIds();
-			   for (String mnl: nonLette) {
-			    
-			    if ( mnl.equals("UNREAD")) {
-			    System.out.println(mnl);
-			    mnl = null;
-			    
+
 			   List<MessagePartHeader> headerParts = message.getPayload().getHeaders();
 			   for (MessagePartHeader mh: headerParts) {
 			    switch (mh.getName()){
@@ -107,37 +95,7 @@ https://accounts.google.com/o/oauth2/token
 			    }
 			   }
 			   System.out.println("Email body : " + emailBody);
-			  }
-			    
-			 }
-			   markAsRead(service, user, message.getId());
 		}
-	}
-
-	public static void getMailBody(String searchString) throws IOException {
-
-		// Access Gmail inbox
-
-//		Gmail.Users.Messages.List request = service.users().messages().list(user).setQ(searchString);
-		Gmail.Users.Messages.List request = service.users().messages().list(user);
-
-		ListMessagesResponse messagesResponse = request.execute();
-		request.setPageToken(messagesResponse.getNextPageToken());
-		
-		
-
-		// Get ID of the email you are looking for
-		String messageId = messagesResponse.getMessages().get(0).getId();
-
-		Message message = service.users().messages().get(user, messageId).execute();
-
-		// Print email body
-
-		String emailBody = StringUtils
-				.newStringUtf8(Base64.decodeBase64(message.getPayload().getParts().get(0).getBody().getData()));
-
-		System.out.println("Email body : " + emailBody);
-
 	}
 
 	public static Gmail getGmailService() throws IOException, GeneralSecurityException {
@@ -216,6 +174,41 @@ https://accounts.google.com/o/oauth2/token
 			ex.printStackTrace();
 		}
 		return null;
+	}
+
+	private static void getListUnreadMails(Gmail service, String userId, String query) throws IOException {
+		Gmail.Users.Messages.List request = service.users().messages().list(user);
+		request.setQ(query);
+
+			try
+			{
+				ListMessagesResponse messagesResponse = request.execute();
+				request.setPageToken(messagesResponse.getNextPageToken());
+				List<Message> messages = messagesResponse.getMessages();
+				for (Message m: messages) {
+					String id = m.getId();
+
+					Message message = service.users().messages().get(user, id).execute();
+
+					String emailBody = StringUtils.newStringUtf8(Base64.decodeBase64(message.getPayload().getParts().get(0).getBody().getData()));
+
+							List<MessagePartHeader> headerParts = message.getPayload().getHeaders();
+							for (MessagePartHeader mh: headerParts) {
+								switch (mh.getName()){
+									case "From":System.out.println(mh.getName() + " : " + mh.getValue()); break;
+									case "To":System.out.println(mh.getName() + " : " + mh.getValue()); break;
+									case "Date":System.out.println(mh.getName() + " : " + mh.getValue()); break;
+									case "Subject":System.out.println(mh.getName() + " : " + mh.getValue()); break;
+								}
+							}
+							System.out.println("Email body : " + emailBody);
+
+				}
+			}
+			catch (Exception e)
+			{
+				System.out.println("An error occurred: " + e.getMessage());
+			}
 	}
 
 }
