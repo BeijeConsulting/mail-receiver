@@ -10,6 +10,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.security.GeneralSecurityException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -33,6 +34,8 @@ import com.google.api.client.util.StringUtils;
 import com.google.api.services.gmail.Gmail;
 import com.google.api.services.gmail.model.ListMessagesResponse;
 import com.google.api.services.gmail.model.Message;
+
+import javax.mail.Folder;
 
 public class GmailAPI {
 
@@ -63,11 +66,12 @@ https://accounts.google.com/o/oauth2/token
 	private static final JsonFactory JSON_FACTORY = JacksonFactory.getDefaultInstance();
 	private static final String user = "me";
 	static Gmail service = null;
-	private static File filePath = new File(System.getProperty("user.dir") + "/GmailAPI/Gmail/credentials.json");
+	private static File filePath = new File(System.getProperty("user.dir") + "/credentials.json");
 
 	public static void main(String[] args) throws IOException, GeneralSecurityException {
 
 		getGmailService();
+//		getListUnreadMails(service, "me", "newer:19/01/2023");
 		getListUnreadMails(service, "me", "is:unread");
 
 	}
@@ -179,16 +183,22 @@ https://accounts.google.com/o/oauth2/token
 	private static void getListUnreadMails(Gmail service, String userId, String query) throws IOException {
 		Gmail.Users.Messages.List request = service.users().messages().list(user);
 		request.setQ(query);
-
+		request.setMaxResults(1L);
+		
 			try
 			{
 				ListMessagesResponse messagesResponse = request.execute();
 				request.setPageToken(messagesResponse.getNextPageToken());
 				List<Message> messages = messagesResponse.getMessages();
-				for (Message m: messages) {
+				
+				
+				 for (Message m: messages) {
+					
+											
 					String id = m.getId();
 
 					Message message = service.users().messages().get(user, id).execute();
+					
 
 					String emailBody = StringUtils.newStringUtf8(Base64.decodeBase64(message.getPayload().getParts().get(0).getBody().getData()));
 
@@ -202,8 +212,14 @@ https://accounts.google.com/o/oauth2/token
 								}
 							}
 							System.out.println("Email body : " + emailBody);
-
+							
+							
+							
 				}
+				
+				
+				
+				
 			}
 			catch (Exception e)
 			{
