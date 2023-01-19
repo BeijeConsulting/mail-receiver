@@ -10,6 +10,8 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.security.GeneralSecurityException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -63,7 +65,7 @@ https://accounts.google.com/o/oauth2/token
 	private static final JsonFactory JSON_FACTORY = JacksonFactory.getDefaultInstance();
 	private static final String user = "me";
 	static Gmail service = null;
-	private static File filePath = new File(System.getProperty("user.dir") + "/GmailAPI/Gmail/credentials.json");
+	private static File filePath = new File(System.getProperty("user.dir") + "/credentials.json");
 
 	public static void main(String[] args) throws IOException, GeneralSecurityException {
 
@@ -179,13 +181,27 @@ https://accounts.google.com/o/oauth2/token
 	private static void getListUnreadMails(Gmail service, String userId, String query) throws IOException {
 		Gmail.Users.Messages.List request = service.users().messages().list(user);
 		request.setQ(query);
+		
+		//request.setMaxResults(1L);
+		
 
 			try
 			{
 				ListMessagesResponse messagesResponse = request.execute();
 				request.setPageToken(messagesResponse.getNextPageToken());
 				List<Message> messages = messagesResponse.getMessages();
-				for (Message m: messages) {
+				Collections.reverse(messages);
+				List<Message> mm = new ArrayList();
+				
+				if (messages.size()< 50) {
+				for ( int i = 0; i < messages.size() ; i++) 
+					mm.add(messages.get(i));			
+				}else {
+					for ( int i = 0; i < 50 ; i++) 
+						mm.add(messages.get(i));					
+				}
+				
+				for (Message m: mm) {
 					String id = m.getId();
 
 					Message message = service.users().messages().get(user, id).execute();
