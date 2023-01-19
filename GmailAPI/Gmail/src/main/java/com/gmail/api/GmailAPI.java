@@ -11,7 +11,6 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
-
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -40,7 +39,7 @@ import javax.mail.Folder;
 
 public class GmailAPI {
 
-
+	
 	/*
 	1.Get code :
 https://accounts.google.com/o/oauth2/v2/auth?
@@ -67,7 +66,7 @@ https://accounts.google.com/o/oauth2/token
 	private static final JsonFactory JSON_FACTORY = JacksonFactory.getDefaultInstance();
 	private static final String user = "me";
 	static Gmail service = null;
-	private static File filePath = new File(System.getProperty("user.dir") + "/credentials.json");
+	private static File filePath = new File(System.getProperty("user.dir") + "/GmailAPI/Gmail/credentials.json");
 
 	public static void main(String[] args) throws IOException, GeneralSecurityException {
 
@@ -130,11 +129,10 @@ https://accounts.google.com/o/oauth2/token
                 new ModifyMessageRequest()
                 .setAddLabelIds(Collections.singletonList("INBOX"))
                 .setRemoveLabelIds(Collections.singletonList("UNREAD"));
-        Message message = null;
 
         if(Objects.nonNull(messageId)) {
-          message = service.users().messages().modify(userId, messageId, mods).execute();
-          System.out.println("Message id marked as read: " + message.getId());
+			Message message = service.users().messages().modify(userId, messageId, mods).execute();
+	  		System.out.println("Message id marked as read: " + message.getId());
         }
       }
 
