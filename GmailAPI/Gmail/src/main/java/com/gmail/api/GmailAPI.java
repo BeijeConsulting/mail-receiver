@@ -11,7 +11,7 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
-import java.util.Collection;
+
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -36,9 +36,11 @@ import com.google.api.services.gmail.Gmail;
 import com.google.api.services.gmail.model.ListMessagesResponse;
 import com.google.api.services.gmail.model.Message;
 
+import javax.mail.Folder;
+
 public class GmailAPI {
 
-	
+
 	/*
 	1.Get code :
 https://accounts.google.com/o/oauth2/v2/auth?
@@ -70,6 +72,7 @@ https://accounts.google.com/o/oauth2/token
 	public static void main(String[] args) throws IOException, GeneralSecurityException {
 
 		getGmailService();
+//		getListUnreadMails(service, "me", "newer:19/01/2023");
 		getListUnreadMails(service, "me", "is:unread");
 
 	}
@@ -82,9 +85,9 @@ https://accounts.google.com/o/oauth2/token
 
 		for (Message m: messages) {
 			   String id = m.getId();
-			            
+
 			   Message message = service.users().messages().get(user, id).execute();
-			  
+
 			   String emailBody = StringUtils.newStringUtf8(Base64.decodeBase64(message.getPayload().getParts().get(0).getBody().getData()));
 
 			   List<MessagePartHeader> headerParts = message.getPayload().getHeaders();
@@ -121,14 +124,14 @@ https://accounts.google.com/o/oauth2/token
 
 		return service;
 	}
-	
+
 	static void markAsRead(final Gmail service, final String userId, final String messageId) throws IOException {
         ModifyMessageRequest mods =
                 new ModifyMessageRequest()
                 .setAddLabelIds(Collections.singletonList("INBOX"))
                 .setRemoveLabelIds(Collections.singletonList("UNREAD"));
         Message message = null;
-    
+
         if(Objects.nonNull(messageId)) {
           message = service.users().messages().modify(userId, messageId, mods).execute();
           System.out.println("Message id marked as read: " + message.getId());
@@ -181,9 +184,9 @@ https://accounts.google.com/o/oauth2/token
 	private static void getListUnreadMails(Gmail service, String userId, String query) throws IOException {
 		Gmail.Users.Messages.List request = service.users().messages().list(user);
 		request.setQ(query);
-		
+
 		//request.setMaxResults(1L);
-		
+
 
 			try
 			{
@@ -192,19 +195,20 @@ https://accounts.google.com/o/oauth2/token
 				List<Message> messages = messagesResponse.getMessages();
 				Collections.reverse(messages);
 				List<Message> mm = new ArrayList();
-				
+
 				if (messages.size()< 50) {
-				for ( int i = 0; i < messages.size() ; i++) 
-					mm.add(messages.get(i));			
+				for ( int i = 0; i < messages.size() ; i++)
+					mm.add(messages.get(i));
 				}else {
-					for ( int i = 0; i < 50 ; i++) 
-						mm.add(messages.get(i));					
+					for ( int i = 0; i < 50 ; i++)
+						mm.add(messages.get(i));
 				}
-				
+
 				for (Message m: mm) {
 					String id = m.getId();
 
 					Message message = service.users().messages().get(user, id).execute();
+
 
 					String emailBody = StringUtils.newStringUtf8(Base64.decodeBase64(message.getPayload().getParts().get(0).getBody().getData()));
 
@@ -219,7 +223,13 @@ https://accounts.google.com/o/oauth2/token
 							}
 							System.out.println("Email body : " + emailBody);
 
+
+
 				}
+
+
+
+
 			}
 			catch (Exception e)
 			{
