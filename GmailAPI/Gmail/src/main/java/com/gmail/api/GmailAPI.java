@@ -10,12 +10,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.security.GeneralSecurityException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 import com.google.api.services.gmail.model.MessagePartHeader;
 import com.google.api.services.gmail.model.ModifyMessageRequest;
@@ -69,7 +64,7 @@ https://accounts.google.com/o/oauth2/token
 	private static File filePath = new File(System.getProperty("user.dir") + "/GmailAPI/Gmail/credentials.json");
 
 	public static void main(String[] args) throws IOException, GeneralSecurityException {
-
+		System.out.println(System.getProperty("user.dir"));
 		getGmailService();
 //		getListUnreadMails(service, "me", "newer:19/01/2023");
 		getListUnreadMails(service, "me", "is:unread");
@@ -184,9 +179,7 @@ https://accounts.google.com/o/oauth2/token
 		request.setQ(query);
 
 		//request.setMaxResults(1L);
-
-
-			try
+		try
 			{
 				ListMessagesResponse messagesResponse = request.execute();
 				request.setPageToken(messagesResponse.getNextPageToken());
@@ -203,17 +196,15 @@ https://accounts.google.com/o/oauth2/token
 				}
 
 				for (Message m: mm) {
+					String mittente="";
 					String id = m.getId();
-
 					Message message = service.users().messages().get(user, id).execute();
-
-
 					String emailBody = StringUtils.newStringUtf8(Base64.decodeBase64(message.getPayload().getParts().get(0).getBody().getData()));
 
 							List<MessagePartHeader> headerParts = message.getPayload().getHeaders();
 							for (MessagePartHeader mh: headerParts) {
 								switch (mh.getName()){
-									case "From":System.out.println(mh.getName() + " : " + mh.getValue()); break;
+									case "From":System.out.println(mh.getName() + " : " + mh.getValue()); mittente = mh.getValue(); break;
 									case "To":System.out.println(mh.getName() + " : " + mh.getValue()); break;
 									case "Date":System.out.println(mh.getName() + " : " + mh.getValue()); break;
 									case "Subject":System.out.println(mh.getName() + " : " + mh.getValue()); break;
@@ -221,18 +212,41 @@ https://accounts.google.com/o/oauth2/token
 							}
 							System.out.println("Email body : " + emailBody);
 
-
-
+							if(mittente.contains("beije.it")){  // TODO mittente.contains("Immobiliare")
+								List<String> dati = getDataImmobiliare(emailBody); //da vedere cosa si vuol fare con questi dati
+								dati.add(mittente);
+							}
 				}
-
-
-
-
 			}
 			catch (Exception e)
 			{
 				System.out.println("An error occurred: " + e.getMessage());
 			}
+	}
+
+	public static List<String> getDataImmobiliare(String body){
+		System.out.println("-----------------------");
+		Scanner scanner = new Scanner(body);
+		List<String> dati = new ArrayList<>();
+		while((scanner.hasNext())){
+			String a = scanner.nextLine();
+			String nome, email, telefono, idAnnuncio;
+			if(a.contains("Nome:")){
+				nome = a.split(":")[1];
+				dati.add(nome.trim().substring(1,nome.length()-2).trim());
+			}else if(a.contains("Email:")){
+				email = a.split(":")[1];
+				dati.add(email.trim().substring(1,email.length()-2).trim());
+			} else if (a.contains("Telefono:")) {
+				telefono = a.split(":")[1];
+				dati.add(telefono.trim().substring(1,telefono.length()-2).trim());
+			} else if (a.contains("Messaggio ricevuto per l'annuncio:")) {
+				idAnnuncio = a.split(":")[1];
+				dati.add(idAnnuncio.trim().substring(1,idAnnuncio.length()-2));
+			}
+		}
+
+		return dati;
 	}
 
 }
